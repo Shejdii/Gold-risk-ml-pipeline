@@ -3,3 +3,7 @@ requests
 pytest
 pylint
 black
+scikit-learn
+joblib
+fastapi
+uvicorn

@@ -1,0 +1,18 @@
+import pandas as pd
+from pathlib import Path
+
+FEATURE_DIR = Path("data/features")
+
+
+def test_features_files_exist():
+    assert (FEATURE_DIR / "train.csv").exists(), "Missing data/features/train.csv"
+    assert (FEATURE_DIR / "val.csv").exists(), "Missing data/features/val.csv"
+    assert (FEATURE_DIR / "test.csv").exists(), "Missing data/features/test.csv"
+
+
+def test_future_regime_is_valid_labels():
+    df = pd.read_csv(FEATURE_DIR / "train.csv")
+    assert df["future_regime"].isna().sum() == 0, "future_regime contains NaN"
+    assert set(df["future_regime"].astype(str).unique()).issubset(
+        {"LOW", "MEDIUM", "HIGH"}
+    ), "Invalid future_regime labels"

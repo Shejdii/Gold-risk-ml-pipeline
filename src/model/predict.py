@@ -11,9 +11,11 @@ RISK_MODEL_PATH = ART_DIR / "risk_5d_regressor.pkl"
 
 TIME_COL = "Date"
 
+
 def load_bundle(path: Path):
     bundle = joblib.load(path)
     return bundle["model"], bundle["feature_cols"]
+
 
 def main():
     test_path = DATA_DIR / "test.csv"
@@ -29,11 +31,13 @@ def main():
     pred_regime = regime_model.predict(X_regime)
     pred_risk = risk_model.predict(X_risk)
 
-    out = pd.DataFrame({
-        "Date": df[TIME_COL],
-        "pred_future_regime": pred_regime,
-        "pred_future_5d_vol": pred_risk,
-    })
+    out = pd.DataFrame(
+        {
+            "Date": df[TIME_COL],
+            "pred_future_regime": pred_regime,
+            "pred_future_5d_vol": pred_risk,
+        }
+    )
 
     # optional: include anomaly flags if present
     for c in ["anomaly", "anomaly_ratio"]:
@@ -47,6 +51,7 @@ def main():
 
     print(f"[predict] saved -> {out_path}")
     print(out.tail(5).to_string(index=False))
+
 
 if __name__ == "__main__":
     main()

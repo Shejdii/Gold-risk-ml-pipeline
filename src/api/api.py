@@ -16,6 +16,7 @@ regime_cols = regime_bundle["feature_cols"]
 risk_model = risk_bundle["model"]
 risk_cols = risk_bundle["feature_cols"]
 
+
 @app.get("/predict/latest")
 def predict_latest():
     df = pd.read_csv("data/features/test.csv", parse_dates=["Date"])
@@ -33,9 +34,11 @@ def predict_latest():
         "pred_future_5d_vol": pred_risk,
     }
 
+
 @app.get("/")
 def root():
     return {"status": "ok", "service": "gold-risk-api"}
+
 
 @app.get("/health")
 def health():

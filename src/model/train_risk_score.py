@@ -24,11 +24,13 @@ DROP_COLS = {
     "regime_current",
 }
 
+
 def make_X_y(df: pd.DataFrame):
     feature_cols = [c for c in df.columns if c not in DROP_COLS]
     X = df[feature_cols]
     y = df[TARGET_COL]
     return X, y, feature_cols
+
 
 def rmse(y_true, y_pred):
     return float(np.sqrt(mean_squared_error(y_true, y_pred)))
@@ -43,13 +45,14 @@ def main():
 
     X_train = X_train.replace([np.inf, -np.inf], np.nan)
     X_val = X_val.replace([np.inf, -np.inf], np.nan)
-    
 
-    model = Pipeline([
-    ("imputer", SimpleImputer(strategy="median")),
-    ("scaler", StandardScaler()),
-    ("reg", Ridge(alpha=1.0)),
-    ])
+    model = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+            ("reg", Ridge(alpha=1.0)),
+        ]
+    )
 
     model.fit(X_train, y_train)
     preds = model.predict(X_val)
@@ -58,10 +61,16 @@ def main():
     print(f"[risk5d] val_rmse={score:.6f}")
 
     joblib.dump(
-        {"model": model, "feature_cols": feature_cols, "time_col": TIME_COL, "target_col": TARGET_COL},
-        ART_DIR / "risk_5d_regressor.pkl"
+        {
+            "model": model,
+            "feature_cols": feature_cols,
+            "time_col": TIME_COL,
+            "target_col": TARGET_COL,
+        },
+        ART_DIR / "risk_5d_regressor.pkl",
     )
     print(f"[risk5d] saved artifacts to {ART_DIR / 'risk_5d_regressor.pkl'}")
+
 
 if __name__ == "__main__":
     main()

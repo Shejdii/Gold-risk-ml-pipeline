@@ -1,28 +1,26 @@
 SHELL := cmd.exe
 .SHELLFLAGS := /c
-.PHONY: clean install format lint test features all
+
+PYTHON := .\.venv\Scripts\python.exe
+PIP := $(PYTHON) -m pip
+
+.PHONY: install format lint test clean ingest preprocess features train predict api pipeline
 
 install:
-	python -m pip install --upgrade pip
-	pip install -r requirements.txt
+	$(PIP) install --upgrade pip
+	$(PIP) install -r requirements.txt
 
 format:
-	black .
+	$(PYTHON) -m black .
 
 lint:
-	pylint --disable=R,C src || true
+	$(PYTHON) -m pylint --disable=R,C src || exit 0
 
 test:
-	pytest -q
-
-features:
-	$(PYTHON) features\build_features.py
+	$(PYTHON) -m pytest -q
 
 clean:
-	if exist \features rmdir /s /q \features
-	if exist artifacts rmdir /s /q artifacts
-
-.PHONY: ingest preprocess features
+	$(PYTHON) scripts\clean.py
 
 ingest:
 	$(PYTHON) src\data\ingest.py
@@ -31,7 +29,16 @@ preprocess:
 	$(PYTHON) src\data\preprocess.py
 
 features:
-	$(PYTHON) features\build_features.py
+	$(PYTHON) src\features\build_features.py
 
+train:
+	$(PYTHON) src\model\train_volatility_regime.py
+	$(PYTHON) src\model\train_risk_score.py
 
-all: install format lint test
+predict:
+	$(PYTHON) src\model\predict.py
+
+api:
+	$(PYTHON) -m uvicorn src.api.api:app --reload
+
+pipeline: ingest preprocess features train

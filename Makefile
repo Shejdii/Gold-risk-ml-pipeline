@@ -42,3 +42,9 @@ api:
 	$(PYTHON) -m uvicorn src.api.api:app --reload
 
 pipeline: ingest preprocess features train
+
+push-ecr:
+	aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 896884286909.dkr.ecr.eu-west-1.amazonaws.com
+	docker build -t gold_engine-cd .
+	docker tag gold_engine-cd:latest 896884286909.dkr.ecr.eu-west-1.amazonaws.com/gold_engine-cd:latest
+	docker push 896884286909.dkr.ecr.eu-west-1.amazonaws.com/gold_engine-cd:latest

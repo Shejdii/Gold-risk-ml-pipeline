@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Gold Risk Engine</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Gold Risk Engine</h1>
+
+<button onclick="runAnalysis()">Run Analysis</button>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+async function runAnalysis() {
+
+    const response = await fetch("/predict/latest")
+    const data = await response.json()
+
+    document.getElementById("result").innerHTML = `
+        <p>Date: ${data.date}</p>
+        <p>Future Regime: ${data.pred_future_regime}</p>
+        <p>Predicted 5D Volatility: ${data.pred_future_5d_vol}</p>
+    `
+}
+
+</script>
+
+</body>
+</html>

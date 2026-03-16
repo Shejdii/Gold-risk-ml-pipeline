@@ -3,7 +3,8 @@ requests
 pytest
 pylint
 black
-scikit-learn
+scikit-learn==1.7.2
 joblib
 fastapi
 uvicorn
+httpx

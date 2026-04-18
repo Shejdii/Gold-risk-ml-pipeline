@@ -1,5 +1,5 @@
-SHELL := cmd.exe
-.SHELLFLAGS := /c
+PYTHON := python
+PIP := $(PYTHON) -m pip
 
 PYTHON := .\.venv\Scripts\python.exe
 PIP := $(PYTHON) -m pip
@@ -14,7 +14,7 @@ format:
 	$(PYTHON) -m black .
 
 lint:
-	$(PYTHON) -m pylint --disable=R,C src || exit 0
+	-$(PYTHON) -m pylint --disable=R,C src
 
 test:
 	$(PYTHON) -m pytest -q

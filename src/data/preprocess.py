@@ -1,15 +1,17 @@
 import pandas as pd
-from pathlib import Path\
-
-
+from pathlib import Path
 
 print("Preprocess script started")
 
-def save_preprocessed_data(df: pd.DataFrame, output_dir: str = "data/processed") -> None:
+
+def save_preprocessed_data(
+    df: pd.DataFrame, output_dir: str = "data/processed"
+) -> None:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_path = Path(output_dir) / "xauusd_preprocessed.csv"
     df.to_csv(output_path, index=False)
     print(f"Preprocessed data saved to {output_path}")
+
 
 def preprocess_gold_data(df: pd.DataFrame) -> pd.DataFrame:
 
@@ -18,15 +20,20 @@ def preprocess_gold_data(df: pd.DataFrame) -> pd.DataFrame:
     if not required_columns.issubset(df.columns):
         missing_cols = required_columns - set(df.columns)
         raise ValueError(f"Missing required columns: {missing_cols}")
-    
+
     # Konwersja kolumny 'Date' na datetime
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    
-    #sprawdzenie poprawności typów danych
-    numeric_cols = ["Open", "High", "Low", "Close",]
+
+    # sprawdzenie poprawności typów danych
+    numeric_cols = [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+    ]
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce")   
-        
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
     # Usunięcie wierszy z niepoprawnymi datami
     df = df.dropna(subset=["Date"])
 
@@ -58,5 +65,3 @@ if __name__ == "__main__":
     raw_df = pd.read_csv(raw_data_path)
     preprocessed_df = preprocess_gold_data(raw_df)
     save_preprocessed_data(preprocessed_df)
-
-

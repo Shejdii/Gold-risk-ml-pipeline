@@ -1,37 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Gold Risk Engine</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Risk Engine</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <div class="container">
-
-<h1>Gold Risk Engine</h1>
-
-<button onclick="runAnalysis()">Run Analysis</button>
-
-<div id="result"></div>
-
+    <h1>Gold Risk Engine</h1>
+    <button onclick="runAnalysis()">Run Analysis</button>
+    <div id="result"></div>
 </div>
 
 <script>
-
 async function runAnalysis() {
+    const resultBox = document.getElementById("result");
 
-    const response = await fetch("/predict/latest")
-    const data = await response.json()
+    resultBox.innerHTML = "<p>Loading...</p>";
 
-    document.getElementById("result").innerHTML = `
-        <p>Date: ${data.date}</p>
-        <p>Future Regime: ${data.pred_future_regime}</p>
-        <p>Predicted 5D Volatility: ${data.pred_future_5d_vol}</p>
-    `
+    try {
+        const response = await fetch("/predict/latest");
+        const data = await response.json();
+
+        if (data.status === "error") {
+            resultBox.innerHTML = `
+                <p><strong>Error:</strong> ${data.message}</p>
+            `;
+            return;
+        }
+
+        const pred = data.prediction || {};
+
+        resultBox.innerHTML = `
+            <p><strong>Date:</strong> ${pred.date ?? "N/A"}</p>
+            <p><strong>Future Regime:</strong> ${pred.future_regime ?? "N/A"}</p>
+            <p><strong>Predicted 5D Volatility:</strong> ${pred.future_5d_vol ?? "N/A"}</p>
+        `;
+    } catch (error) {
+        resultBox.innerHTML = `
+            <p><strong>Error:</strong> Failed to fetch prediction.</p>
+        `;
+    }
 }
-
 </script>
 
 </body>

@@ -40,7 +40,9 @@ def download_gold_data() -> pd.DataFrame:
     for col in ["Open", "High", "Low", "Close"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df = df.dropna(subset=["Date", "Open", "High", "Low", "Close"]).reset_index(drop=True)
+    df = df.dropna(subset=["Date", "Open", "High", "Low", "Close"]).reset_index(
+        drop=True
+    )
 
     return df
 

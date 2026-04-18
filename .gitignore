@@ -10,5 +10,11 @@ build/
 *.egg-info/
 .env
 .vscode/
-data/
+
+# generated data
+data/raw/
+data/processed/
+data/features/
+
+# generated model artifacts
 artifacts/

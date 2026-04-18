@@ -4,7 +4,7 @@ SHELL := cmd.exe
 PYTHON := .\.venv\Scripts\python.exe
 PIP := $(PYTHON) -m pip
 
-.PHONY: install format lint test clean ingest preprocess features train predict api pipeline
+.PHONY: install format lint test clean ingest preprocess features train predict api pipeline all
 
 install:
 	$(PIP) install --upgrade pip
@@ -42,6 +42,8 @@ api:
 	$(PYTHON) -m uvicorn src.api.api:app --reload
 
 pipeline: ingest preprocess features train
+
+all: pipeline
 
 push-ecr:
 	aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 896884286909.dkr.ecr.eu-west-1.amazonaws.com

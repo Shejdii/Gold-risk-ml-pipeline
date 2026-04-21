@@ -11,10 +11,24 @@ def compute_short_term_returns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# medium-term (5 day) returns
+def compute_medium_term_returns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["return_5d"] = df["Close"].pct_change(5)
+    return df
+
+
 # long-term (21 day) returns
 def compute_long_term_returns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["return_21d"] = df["Close"].pct_change(21)
+    return df
+
+
+# longer momentum context
+def compute_longer_term_returns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["return_63d"] = df["Close"].pct_change(63)
     return df
 
 
@@ -28,6 +42,35 @@ def compute_short_term_volatility(df: pd.DataFrame) -> pd.DataFrame:
 def compute_long_term_volatility(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["vol_21d"] = df["return_1d"].rolling(21).std()
+    return df
+
+
+def compute_long_horizon_volatility_252d(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["vol_252d"] = df["return_1d"].rolling(252).std()
+    return df
+
+
+def compute_vol_ratio_7_21(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["vol_ratio_7_21"] = df["vol_7d"] / df["vol_21d"]
+    df["vol_ratio_7_21"] = df["vol_ratio_7_21"].replace([np.inf, -np.inf], np.nan)
+    return df
+
+
+def ratio_21d_252d(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["ratio_21d_252d"] = df["vol_21d"] / df["vol_252d"]
+    df["ratio_21d_252d"] = df["ratio_21d_252d"].replace([np.inf, -np.inf], np.nan)
+    return df
+
+
+# trend / mean reversion proxy
+def compute_price_vs_ma21(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    ma21 = df["Close"].rolling(21).mean()
+    df["price_vs_ma21"] = df["Close"] / ma21
+    df["price_vs_ma21"] = df["price_vs_ma21"].replace([np.inf, -np.inf], np.nan)
     return df
 
 
@@ -57,26 +100,6 @@ def compute_volatility_anomaly(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# 5th layer: forward risk targets
-def compute_future_5d_vol_target(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-    df["future_5d_vol"] = df["return_1d"].rolling(5).std().shift(-5)
-    return df
-
-
-def compute_long_horizon_volatility_252d(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-    df["vol_252d"] = df["return_1d"].rolling(252).std()
-    return df
-
-
-def ratio_21d_252d(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-    df["ratio_21d_252d"] = df["vol_21d"] / df["vol_252d"]
-    df["ratio_21d_252d"] = df["ratio_21d_252d"].replace([np.inf, -np.inf], np.nan)
-    return df
-
-
 def anomaly_flag_252d(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     mean_ = df["ratio_21d_252d"].rolling(60).mean()
@@ -86,15 +109,27 @@ def anomaly_flag_252d(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# 5th layer: forward risk targets
+def compute_future_5d_vol_target(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["future_5d_vol"] = df["return_1d"].rolling(5).std().shift(-5)
+    return df
+
+
 def build_features_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     df = compute_short_term_returns(df)
+    df = compute_medium_term_returns(df)
     df = compute_long_term_returns(df)
+    df = compute_longer_term_returns(df)
 
     df = compute_short_term_volatility(df)
     df = compute_long_term_volatility(df)
-
     df = compute_long_horizon_volatility_252d(df)
+
+    df = compute_vol_ratio_7_21(df)
     df = ratio_21d_252d(df)
+    df = compute_price_vs_ma21(df)
+
     df = anomaly_flag_252d(df)
 
     q33 = df["vol_21d"].quantile(0.33)
@@ -122,10 +157,15 @@ def build_features_df(df: pd.DataFrame) -> pd.DataFrame:
 
     needed = [
         "return_1d",
+        "return_5d",
+        "return_21d",
+        "return_63d",
         "vol_7d",
         "vol_21d",
         "vol_252d",
+        "vol_ratio_7_21",
         "ratio_21d_252d",
+        "price_vs_ma21",
         "z_score",
     ]
     features_df = features_df.dropna(subset=needed).reset_index(drop=True)
@@ -168,10 +208,15 @@ def feature_engineering_main():
 
     needed = [
         "return_1d",
+        "return_5d",
+        "return_21d",
+        "return_63d",
         "vol_7d",
         "vol_21d",
         "vol_252d",
+        "vol_ratio_7_21",
         "ratio_21d_252d",
+        "price_vs_ma21",
         "z_score",
         "future_5d_vol",
     ]

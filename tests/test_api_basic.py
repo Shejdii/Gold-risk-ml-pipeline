@@ -23,5 +23,8 @@ def test_predict_latest_endpoint_exists():
 
     pred = data["prediction"]
     assert "date" in pred
-    assert "future_regime" in pred
-    assert "future_5d_vol" in pred
+    assert "market_regime_label" in pred
+    assert "predicted_5d_volatility_pct" in pred
+    assert "regime_explanation" in pred
+    assert "volatility_explanation" in pred
+    assert "data_refresh_mode" in pred

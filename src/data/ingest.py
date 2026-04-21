@@ -1,5 +1,5 @@
 from pathlib import Path
-import time
+from datetime import datetime, timedelta
 
 import pandas as pd
 import yfinance as yf
@@ -47,46 +47,97 @@ def download_gold_data() -> pd.DataFrame:
     return df
 
 
+def get_expected_market_date() -> str:
+    """
+    Heuristic for expected latest daily market date.
+
+    Rules:
+    - Saturday  -> expected latest date = Friday
+    - Sunday    -> expected latest date = Friday
+    - Weekday before 22:00 UTC -> expected latest date = previous business day
+    - Weekday after 22:00 UTC  -> expected latest date = today
+
+    This avoids unnecessary downloads while still allowing refresh
+    once a new daily bar is likely available.
+    """
+    now = datetime.utcnow()
+    current_date = now.date()
+
+    # Weekend -> previous Friday
+    if current_date.weekday() == 5:  # Saturday
+        current_date = current_date - timedelta(days=1)
+    elif current_date.weekday() == 6:  # Sunday
+        current_date = current_date - timedelta(days=2)
+
+    # Before daily data is likely settled -> use previous business day
+    if now.hour < 22:
+        current_date = current_date - timedelta(days=1)
+        while current_date.weekday() >= 5:
+            current_date = current_date - timedelta(days=1)
+
+    return current_date.strftime("%Y-%m-%d")
+
+
 def collect_gold_data(cache_dir: str = "data/raw") -> pd.DataFrame:
     """
-    Freshness-aware ingestion:
-    - if local cache is younger than 24h -> use cache
-    - otherwise try live download
-    - if remote latest date == local latest date -> keep local file
-    - if live download fails and cache exists -> fallback to cache
+    Freshness-aware ingestion based on the latest market date,
+    not file modification time.
+
+    Logic:
+    - if cache exists and its latest date is current enough -> use cache
+    - otherwise try downloading fresh data
+    - if download fails and cache exists -> fallback to cache
     """
     Path(cache_dir).mkdir(parents=True, exist_ok=True)
     file_path = Path(cache_dir) / "xauusd_latest.csv"
 
+    expected_latest_date = get_expected_market_date()
+
+    local_df = None
     if file_path.exists():
-        file_age = time.time() - file_path.stat().st_mtime
-        if file_age < 24 * 3600:
-            print("Using cached gold data.")
-            return pd.read_csv(file_path)
+        local_df = pd.read_csv(file_path)
+
+        if not local_df.empty and "Date" in local_df.columns:
+            local_last_date = str(local_df["Date"].iloc[-1])
+
+            if local_last_date >= expected_latest_date:
+                print(
+                    f"Using cached gold data. "
+                    f"Cache date {local_last_date} is current enough "
+                    f"(expected >= {expected_latest_date})."
+                )
+                return local_df
 
     try:
         remote_df = download_gold_data()
     except Exception as e:
-        if file_path.exists():
+        if local_df is not None and not local_df.empty:
             print(f"Warning: live download failed, using cached data. Reason: {e}")
-            return pd.read_csv(file_path)
+            return local_df
         raise RuntimeError(
             f"Failed to download gold data and no cache is available: {e}"
         ) from e
 
-    if file_path.exists():
-        local_df = pd.read_csv(file_path)
+    if remote_df.empty:
+        if local_df is not None and not local_df.empty:
+            print("Warning: downloaded dataframe is empty, using cached data.")
+            return local_df
+        raise RuntimeError("Downloaded dataframe is empty and no cache is available.")
 
-        if not local_df.empty and not remote_df.empty:
-            local_last_date = str(local_df["Date"].iloc[-1])
-            remote_last_date = str(remote_df["Date"].iloc[-1])
+    remote_last_date = str(remote_df["Date"].iloc[-1])
 
-            if local_last_date == remote_last_date:
-                print("Remote data unchanged. Using existing file.")
-                return local_df
+    if local_df is not None and not local_df.empty and "Date" in local_df.columns:
+        local_last_date = str(local_df["Date"].iloc[-1])
+
+        if local_last_date == remote_last_date:
+            print("Remote data unchanged. Using existing file.")
+            return local_df
 
     remote_df.to_csv(file_path, index=False)
-    print("Downloaded and updated gold data.")
+    print(
+        f"Downloaded and updated gold data. "
+        f"Latest remote date: {remote_last_date}"
+    )
 
     return remote_df
 

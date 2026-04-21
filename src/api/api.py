@@ -7,15 +7,22 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from src.data.ingest import collect_gold_data
+from src.data.preprocess import preprocess_gold_data
+from src.features.build_features import build_features_df
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 MODEL_DIR = BASE_DIR / "artifacts" / "models"
-DATA_PATH = BASE_DIR / "data" / "features" / "test.csv"
 STATIC_DIR = BASE_DIR / "static"
 
 REGIME_MODEL_PATH = MODEL_DIR / "regime_classifier.pkl"
 RISK_MODEL_PATH = MODEL_DIR / "risk_5d_regressor.pkl"
 
-app = FastAPI(title="Gold Risk API")
+app = FastAPI(
+    title="Gold Risk API",
+    description="Inference API for gold volatility regime classification and 5-day forward risk prediction.",
+    version="1.0.0",
+)
 
 
 def require_file(path: Path, label: str) -> None:
@@ -33,14 +40,19 @@ def load_risk_bundle() -> dict:
     return joblib.load(RISK_MODEL_PATH)
 
 
-def load_feature_data() -> pd.DataFrame:
-    require_file(DATA_PATH, "feature data")
-    df = pd.read_csv(DATA_PATH, parse_dates=["Date"])
+def build_latest_feature_row() -> pd.DataFrame:
+    raw_df = collect_gold_data()
+    processed_df = preprocess_gold_data(raw_df)
+    features_df = build_features_df(processed_df)
 
-    if df.empty:
-        raise ValueError("Feature data file exists but is empty.")
+    if features_df.empty:
+        raise ValueError("Feature dataframe is empty after runtime feature generation.")
 
-    return df
+    latest = features_df.tail(1).copy()
+    if latest.empty:
+        raise ValueError("No latest feature row available.")
+
+    return latest
 
 
 def predict_latest_result() -> dict:
@@ -53,8 +65,7 @@ def predict_latest_result() -> dict:
     risk_model = risk_bundle["model"]
     risk_cols = risk_bundle["feature_cols"]
 
-    df = load_feature_data()
-    last = df.tail(1)
+    last = build_latest_feature_row()
 
     X_regime = last[regime_cols].replace([np.inf, -np.inf], np.nan)
     X_risk = last[risk_cols].replace([np.inf, -np.inf], np.nan)
@@ -78,13 +89,29 @@ def predict_latest_result() -> dict:
     }
 
     readable_regime = regime_map.get(pred_regime, str(pred_regime))
+    risk_pct = round(pred_risk * 100, 2)
+
+    regime_explanations = {
+        "LOW": "Lower expected market turbulence over the next 5 trading days.",
+        "MEDIUM": "Moderate expected market turbulence over the next 5 trading days.",
+        "HIGH": "Elevated expected market turbulence over the next 5 trading days.",
+    }
 
     return {
         "status": "ok",
         "prediction": {
             "date": last["Date"].iloc[0].strftime("%Y-%m-%d"),
-            "future_regime": readable_regime,
-            "future_5d_vol": round(pred_risk, 6),
+            "market_regime_label": readable_regime,
+            "predicted_5d_volatility_pct": risk_pct,
+            "regime_explanation": regime_explanations.get(
+                readable_regime,
+                "Model-generated market regime classification."
+            ),
+            "volatility_explanation": (
+                "Predicted 5-day volatility is a forward-looking estimate of market risk. "
+                "Higher values indicate a less stable market."
+            ),
+            "data_refresh_mode": "runtime_fresh",
         },
     }
 
@@ -112,12 +139,14 @@ def predict_latest():
 
 @app.get("/health")
 def health():
+    ready = REGIME_MODEL_PATH.exists() and RISK_MODEL_PATH.exists()
+
     return {
         "status": "ok",
+        "ready": ready,
         "files": {
             "regime_model": REGIME_MODEL_PATH.exists(),
             "risk_model": RISK_MODEL_PATH.exists(),
-            "feature_data": DATA_PATH.exists(),
             "static_dir": STATIC_DIR.exists(),
         },
     }

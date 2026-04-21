@@ -1,4 +1,3 @@
-from pyexpat import features
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -20,14 +19,12 @@ def compute_long_term_returns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # 2nd layer: Volatility features
-# short-term volatility (1 day rolling std)
 def compute_short_term_volatility(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["vol_7d"] = df["return_1d"].rolling(7).std()
     return df
 
 
-# long-term volatility (21 day rolling std)
 def compute_long_term_volatility(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["vol_21d"] = df["return_1d"].rolling(21).std()
@@ -42,7 +39,6 @@ def compute_volatility_regime(df: pd.DataFrame, q33: float, q66: float) -> pd.Da
         (df["vol_21d"] > q33) & (df["vol_21d"] <= q66),
         (df["vol_21d"] > q66),
     ]
-    # dtype=object / string-safe, bez konfliktów np.select
     df["regime_current"] = pd.Series(
         np.select(conditions, ["LOW", "MEDIUM", "HIGH"], default="UNKNOWN"),
         index=df.index,
@@ -52,10 +48,8 @@ def compute_volatility_regime(df: pd.DataFrame, q33: float, q66: float) -> pd.Da
 
 
 # 4th layer: Anomaly detection
-# z-score on short volotility. rolling mean and std on 21d window
 def compute_volatility_anomaly(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    # z-score na vol_7d w oknie 60 dni (stabilniej niż 21)
     mean_ = df["vol_7d"].rolling(60).mean()
     std_ = df["vol_7d"].rolling(60).std().replace(0, np.nan)
     df["z_score"] = (df["vol_7d"] - mean_) / std_
@@ -100,21 +94,43 @@ def build_features_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     df = compute_long_term_volatility(df)
 
     df = compute_long_horizon_volatility_252d(df)
-
     df = ratio_21d_252d(df)
     df = anomaly_flag_252d(df)
 
-    # Monitoring regime (OK globalnie)
     q33 = df["vol_21d"].quantile(0.33)
     q66 = df["vol_21d"].quantile(0.66)
     df = compute_volatility_regime(df, q33, q66)
 
     df = compute_volatility_anomaly(df)
-
-    # Target do modelu
     df = compute_future_5d_vol_target(df)
 
     return df
+
+
+def build_features_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Runtime-friendly feature generation:
+    - no train/val/test split
+    - no file writes
+    - returns full feature dataframe
+    """
+    df = df.copy()
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df = df.sort_values("Date").reset_index(drop=True)
+
+    features_df = build_features_pipeline(df)
+
+    needed = [
+        "return_1d",
+        "vol_7d",
+        "vol_21d",
+        "vol_252d",
+        "ratio_21d_252d",
+        "z_score",
+    ]
+    features_df = features_df.dropna(subset=needed).reset_index(drop=True)
+
+    return features_df
 
 
 def split_time_series(df: pd.DataFrame, train_size=0.7, val_size=0.15):
@@ -150,7 +166,6 @@ def feature_engineering_main():
 
     features_df = build_features_pipeline(df)
 
-    # drop NaN po rolling/shift (to normalne)
     needed = [
         "return_1d",
         "vol_7d",
@@ -164,7 +179,6 @@ def feature_engineering_main():
 
     train_df, val_df, test_df = split_time_series(features_df)
 
-    # thresholds ONLY from train (no leakage)
     q33 = train_df["future_5d_vol"].quantile(0.33)
     q66 = train_df["future_5d_vol"].quantile(0.66)
 

@@ -7,12 +7,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# 🔥 KLUCZOWE
-RUN python src/data/ingest.py && \
-    python src/data/preprocess.py && \
-    python src/features/build_features.py && \
-    python src/model/train_volatility_regime.py && \
-    python src/model/train_risk_score.py
+RUN python -m src.data.ingest && \
+    python -m src.data.preprocess && \
+    python -m src.features.build_features && \
+    python -m src.model.train_volatility_regime && \
+    python -m src.model.train_risk_score && \
+    python -m scripts.export_metrics
 
 RUN ls -R /app/artifacts && ls -R /app/data/features
 

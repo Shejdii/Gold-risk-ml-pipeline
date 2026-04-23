@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import numpy as np
 
+from src.utils.metrics_io import write_metrics
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
@@ -92,6 +93,15 @@ def main():
 
     print(f"[risk5d] selected_model={best['name']}")
     print(f"[risk5d] selected_rmse={best['rmse']:.6f}")
+
+    write_metrics(
+    "artifacts/metrics/regressor_metrics.json",
+    {
+        "selected_model_name": best["name"],
+        "rmse": float(best["rmse"]),
+    },
+)
+    print("[risk5d] wrote metrics to artifacts/metrics/regressor_metrics.json")
 
     joblib.dump(
         {

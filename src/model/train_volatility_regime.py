@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import numpy as np
 
+from src.utils.metrics_io import write_metrics
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
@@ -115,6 +116,17 @@ def main():
     print(f"\n[regime] selected_model={best['name']}")
     print(f"[regime] selected_macro_f1={best['macro_f1']:.4f}")
     print(f"[regime] selected_accuracy={best['accuracy']:.4f}")
+
+    write_metrics(
+    "artifacts/metrics/classifier_metrics.json",
+    {
+        "selected_model_name": best["name"],
+        "macro_f1": float(best["macro_f1"]),
+        "accuracy": float(best["accuracy"]),
+        "balanced_accuracy": float(best["balanced_accuracy"]),
+    },
+)
+    print("[regime] wrote metrics to artifacts/metrics/classifier_metrics.json")
 
     joblib.dump(
         {

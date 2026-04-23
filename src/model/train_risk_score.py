@@ -95,12 +95,12 @@ def main():
     print(f"[risk5d] selected_rmse={best['rmse']:.6f}")
 
     write_metrics(
-    "artifacts/metrics/regressor_metrics.json",
-    {
-        "selected_model_name": best["name"],
-        "rmse": float(best["rmse"]),
-    },
-)
+        "artifacts/metrics/regressor_metrics.json",
+        {
+            "selected_model_name": best["name"],
+            "rmse": float(best["rmse"]),
+        },
+    )
     print("[risk5d] wrote metrics to artifacts/metrics/regressor_metrics.json")
 
     joblib.dump(

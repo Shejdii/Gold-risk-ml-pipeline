@@ -135,8 +135,7 @@ def collect_gold_data(cache_dir: str = "data/raw") -> pd.DataFrame:
 
     remote_df.to_csv(file_path, index=False)
     print(
-        f"Downloaded and updated gold data. "
-        f"Latest remote date: {remote_last_date}"
+        f"Downloaded and updated gold data. " f"Latest remote date: {remote_last_date}"
     )
 
     return remote_df

@@ -104,8 +104,7 @@ def predict_latest_result() -> dict:
             "market_regime_label": readable_regime,
             "predicted_5d_volatility_pct": risk_pct,
             "regime_explanation": regime_explanations.get(
-                readable_regime,
-                "Model-generated market regime classification."
+                readable_regime, "Model-generated market regime classification."
             ),
             "volatility_explanation": (
                 "Predicted 5-day volatility is a forward-looking estimate of market risk. "

@@ -105,8 +105,12 @@ def main():
     )
 
     results = []
-    results.append(evaluate_model("dummy_most_frequent", dummy, X_train, y_train, X_val, y_val))
-    results.append(evaluate_model("logistic_regression", logreg, X_train, y_train, X_val, y_val))
+    results.append(
+        evaluate_model("dummy_most_frequent", dummy, X_train, y_train, X_val, y_val)
+    )
+    results.append(
+        evaluate_model("logistic_regression", logreg, X_train, y_train, X_val, y_val)
+    )
     results.append(evaluate_model("random_forest", rf, X_train, y_train, X_val, y_val))
 
     # wybór najlepszego modelu po macro_f1
@@ -118,14 +122,14 @@ def main():
     print(f"[regime] selected_accuracy={best['accuracy']:.4f}")
 
     write_metrics(
-    "artifacts/metrics/classifier_metrics.json",
-    {
-        "selected_model_name": best["name"],
-        "macro_f1": float(best["macro_f1"]),
-        "accuracy": float(best["accuracy"]),
-        "balanced_accuracy": float(best["balanced_accuracy"]),
-    },
-)
+        "artifacts/metrics/classifier_metrics.json",
+        {
+            "selected_model_name": best["name"],
+            "macro_f1": float(best["macro_f1"]),
+            "accuracy": float(best["accuracy"]),
+            "balanced_accuracy": float(best["balanced_accuracy"]),
+        },
+    )
     print("[regime] wrote metrics to artifacts/metrics/classifier_metrics.json")
 
     joblib.dump(

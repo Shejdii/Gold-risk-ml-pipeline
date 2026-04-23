@@ -5,7 +5,6 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MODEL_PATH = PROJECT_ROOT / "artifacts" / "models" / "regime_classifier.pkl"
 INPUT_PATH = PROJECT_ROOT / "data" / "features" / "test.csv"
@@ -50,7 +49,9 @@ def main() -> None:
 
     missing_cols = [col for col in feature_cols if col not in df.columns]
     if missing_cols:
-        fail(f"Smoke input CSV is missing required feature columns: {missing_cols[:10]}")
+        fail(
+            f"Smoke input CSV is missing required feature columns: {missing_cols[:10]}"
+        )
 
     sample = df[feature_cols].head(1)
 

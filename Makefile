@@ -17,23 +17,24 @@ test:
 	$(PYTHON) -m pytest -q
 
 clean:
-	$(PYTHON) scripts/clean.py
+	$(PYTHON) -m scripts.clean
 
 ingest:
-	$(PYTHON) src/data/ingest.py
+	$(PYTHON) -m src.data.ingest
 
 preprocess:
-	$(PYTHON) src/data/preprocess.py
+	$(PYTHON) -m src.data.preprocess
 
 features:
-	$(PYTHON) src/features/build_features.py
+	$(PYTHON) -m src.features.build_features
 
 train:
-	$(PYTHON) src/model/train_volatility_regime.py
-	$(PYTHON) src/model/train_risk_score.py
+	$(PYTHON) -m src.model.train_volatility_regime
+	$(PYTHON) -m src.model.train_risk_score
+	$(PYTHON) -m scripts.export_metrics
 
 predict:
-	$(PYTHON) src/model/predict.py
+	$(PYTHON) -m src.model.predict
 
 api:
 	$(PYTHON) -m uvicorn src.api.api:app --reload

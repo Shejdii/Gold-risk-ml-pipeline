@@ -6,16 +6,6 @@ This project focuses on building a reproducible ML system, not just training a m
 
 ---
 
-## 🌐 Live Demo
-
-API is available at:
-
-https://your-render-url.onrender.com
-
-Example:
-https://your-render-url.onrender.com/predict/latest
-
-
 ## ⚡ What this project does
 
 The system:
@@ -27,6 +17,18 @@ The system:
 - stores artifacts and metrics for reproducibility
 - exposes predictions via a FastAPI service
 - runs inside a Docker container
+
+---
+
+## 🌐 Live Demo
+
+API is available at:
+
+https://gold-risk-ml-pipeline.onrender.com/
+
+Example:
+
+https://gold-risk-ml-pipeline.onrender.com/predict/latest
 
 ---
 
@@ -66,7 +68,7 @@ As a result:
 
 Selected model: **Random Forest**
 
-
+Models are selected based on validation Macro F1.
 
 ---
 
@@ -79,6 +81,20 @@ Selected model: **Random Forest**
 | Random Forest     | 0.00486  |
 
 Selected model: **Ridge**
+
+Models are selected based on RMSE.
+
+---
+
+## 🔍 Example prediction
+
+```json
+{
+  "date": "2026-04-30",
+  "predicted_regime": "MEDIUM",
+  "risk_5d": 0.0049
+}
+```
 
 ---
 
@@ -181,12 +197,6 @@ This demonstrates:
 
 ---
 
-## ⚠️ Limitations
-
-- performance is close to baseline due to noisy financial data
-- model should not be used for real trading decisions
-- results depend heavily on feature design
-
 ## 🧱 Tech stack
 
 - Python
@@ -209,8 +219,8 @@ This is not just a model project. It demonstrates:
 
 ---
 
-## ⚠️ Notes
+## ⚠️ Limitations
 
-- This is a portfolio/research system, not a trading system
-- No claim of financial predictability or alpha
-- Data is fetched from Yahoo Finance and not redistributed
+- performance is close to baseline due to noisy financial data
+- not suitable for real trading decisions
+- results depend heavily on feature design

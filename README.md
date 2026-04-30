@@ -6,6 +6,16 @@ This project focuses on building a reproducible ML system, not just training a m
 
 ---
 
+## 🌐 Live Demo
+
+API is available at:
+
+https://your-render-url.onrender.com
+
+Example:
+https://your-render-url.onrender.com/predict/latest
+
+
 ## ⚡ What this project does
 
 The system:
@@ -55,6 +65,8 @@ As a result:
 | Random Forest       | 0.41     | 0.40     |
 
 Selected model: **Random Forest**
+
+
 
 ---
 
@@ -168,6 +180,12 @@ This demonstrates:
 - separation between local development and production serving
 
 ---
+
+## ⚠️ Limitations
+
+- performance is close to baseline due to noisy financial data
+- model should not be used for real trading decisions
+- results depend heavily on feature design
 
 ## 🧱 Tech stack
 

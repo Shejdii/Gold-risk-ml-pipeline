@@ -1,115 +1,198 @@
 # Gold Risk ML Pipeline
 
-End-to-end machine learning system that predicts gold market volatility
-regimes and 5-day forward risk.
+End-to-end machine learning system for predicting gold market volatility regimes and 5-day forward risk.
 
-The project demonstrates production-style MLOps practices including
-feature engineering, model training, an inference API, and containerized
-deployment.
+This project focuses on building a reproducible ML system, not just training a model.
 
-------------------------------------------------------------------------
+---
 
-## Project Overview
+## ⚡ What this project does
 
-This repository demonstrates a production-style machine learning system
-including:
+The system:
 
--   automated data ingestion\
--   feature engineering pipeline\
--   machine learning training workflow\
--   model artifact management\
--   inference API\
--   containerized deployment
+- downloads and updates market data automatically
+- builds time-based features from price series
+- trains and compares multiple models
+- selects the best model based on validation metrics
+- stores artifacts and metrics for reproducibility
+- exposes predictions via a FastAPI service
+- runs inside a Docker container
+
+---
+
+## 🎯 Prediction targets
 
 The system predicts:
 
--   **future market regime** (LOW / MEDIUM / HIGH volatility)
--   **5-day forward volatility risk**
+- **volatility regime**: LOW / MEDIUM / HIGH  
+- **5-day forward volatility risk** (regression)
 
-------------------------------------------------------------------------
+---
 
-## Architecture
+## 🧠 Why this problem is non-trivial
 
-    Market Data (Stooq)
-            │
-            ▼
-    Data Ingestion
-            │
-            ▼
-    Feature Engineering
-            │
-            ▼
-    Model Training
-            │
-            ▼
-    Saved Model Artifacts
-            │
-            ▼
-    FastAPI Inference Service
-            │
-            ▼
-    Docker Container
-            │
-            ▼
-    Prediction API + Demo UI
+Financial time series are:
 
-------------------------------------------------------------------------
+- noisy and non-stationary
+- weakly predictable
+- sensitive to feature design
 
-## Quick Start
+As a result:
 
-Run the project using Docker.
+- models are expected to perform only slightly better than baseline
+- evaluation and validation strategy are critical
 
-Build the container:
+---
 
-``` bash
-docker build -t gold-risk-api .
+## 📊 Model performance (validation set)
+
+### Classification (volatility regime)
+
+| Model                | Accuracy | Macro F1 |
+|---------------------|----------|----------|
+| Dummy (baseline)    | 0.28     | 0.15     |
+| Logistic Regression | 0.44     | 0.40     |
+| Random Forest       | 0.41     | 0.40     |
+
+Selected model: **Random Forest**
+
+---
+
+### Regression (5-day risk)
+
+| Model              | RMSE     |
+|-------------------|----------|
+| Dummy (mean)      | 0.00531  |
+| Ridge Regression  | 0.00483  |
+| Random Forest     | 0.00486  |
+
+Selected model: **Ridge**
+
+---
+
+## 🏗️ Pipeline architecture
+
+```
+Market Data (Yahoo Finance: GC=F)
+        │
+        ▼
+Data Ingestion (daily update + caching)
+        │
+        ▼
+Preprocessing
+        │
+        ▼
+Feature Engineering
+        │
+        ▼
+Model Training + Evaluation
+        │
+        ▼
+Model Selection
+        │
+        ▼
+Artifacts + Metrics (saved to disk)
+        │
+        ▼
+FastAPI Service
+        │
+        ▼
+Dockerized API + Demo UI
 ```
 
-Run the container:
+---
 
-``` bash
+## 🔁 Reproducible pipeline
+
+Run full pipeline:
+
+```bash
+make all
+```
+
+Pipeline includes:
+
+- data ingestion
+- preprocessing
+- feature generation
+- model training
+- metrics export
+
+Artifacts:
+
+```
+artifacts/models/
+artifacts/metrics/
+data/features/
+```
+
+---
+
+## 🚀 API
+
+Run locally:
+
+```bash
+uvicorn src.api.api:app --reload
+```
+
+Run via Docker:
+
+```bash
+docker build -t gold-risk-api .
 docker run -p 8080:8080 gold-risk-api
 ```
 
-Access the API:
+The same container is used for deployment on Render.
 
-http://localhost:8080
+Endpoints:
 
-Interactive API documentation:
+- /predict/latest
+- /health
+- /docs
 
-http://localhost:8080/docs
+---
 
-------------------------------------------------------------------------
+## ☁️ Deployment (Render)
 
-## Data Source
+The API is deployed as a live service using Render.
 
-Market data is fetched programmatically from:
+- containerized FastAPI application
+- deployed directly from repository
+- publicly accessible endpoint (demo)
 
-https://stooq.com
+This demonstrates:
 
-Raw market data is **not redistributed** in this repository.
+- cloud deployment of ML inference services
+- container-based deployment workflow
+- separation between local development and production serving
 
-Users are responsible for complying with the data provider's terms of
-service.
+---
 
-------------------------------------------------------------------------
+## 🧱 Tech stack
 
-## Tech Stack
+- Python
+- Pandas / NumPy
+- Scikit-learn
+- FastAPI
+- Docker
 
--   Python
--   Pandas
--   NumPy
--   Scikit-learn
--   FastAPI
--   Docker
+---
 
-------------------------------------------------------------------------
+## 🧠 What this project demonstrates
 
-## Project Purpose
+This is not just a model project. It demonstrates:
 
-This project was built as a portfolio MLOps system demonstrating how
-machine learning models can be integrated into a reproducible and
-deployable inference service.
+- reproducible ML pipelines
+- baseline vs model comparison
+- metric-driven model selection
+- artifact management
+- API deployment for inference
 
-The primary focus is on **engineering practices around ML systems**, not
-only model training.
+---
+
+## ⚠️ Notes
+
+- This is a portfolio/research system, not a trading system
+- No claim of financial predictability or alpha
+- Data is fetched from Yahoo Finance and not redistributed
